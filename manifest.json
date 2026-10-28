@@ -1,0 +1,21 @@
+[
+  {
+    "guid": "d5e09db5-245d-4b8d-a8b5-1e5d48841ba6",
+    "name": "Afterglow",
+    "description": "The extras of the Afterglow theme: quality marks, a side menu, a home billboard, top 10 and a tonight picker.",
+    "overview": "Adds small features to the Jellyfin web client that CSS alone cannot do. Needs the File Transformation plugin.",
+    "owner": "kiketorres98",
+    "category": "General",
+    "imageUrl": "https://raw.githubusercontent.com/kiketorres98/jellyfin-plugin-afterglow/main/logo.png",
+    "versions": [
+      {
+        "version": "12.3.0.0",
+        "changelog": "Release 12.3.0.0",
+        "targetAbi": "12.3.0.0",
+        "sourceUrl": "https://github.com/kiketorres98/jellyfin-plugin-afterglow/releases/download/v12.3.0.0/afterglow_12.3.0.0.zip",
+        "checksum": "3FB89E3350E81AC2C374DBD953B32083",
+        "timestamp": "2026-10-28T16:13:56Z"
+      }
+    ]
+  }
+]

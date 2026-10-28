@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Afterglow</title>
+</head>
+<body>
+<div id="AfterglowConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="AfterglowConfigForm">
+                <h2>Afterglow</h2>
+                <p class="fieldDescription">Switch each feature on or off. Reload the web page after saving.</p>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input is="emby-checkbox" type="checkbox" id="QualityMarks" />
+                        <span>Quality marks on posters</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">Small "4K", "HDR" and "Dolby Vision" marks in the corner of posters.</div>
+                </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input is="emby-checkbox" type="checkbox" id="SideMenu" />
+                        <span>Side menu of icons</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">The sections go in a narrow rail on the left that opens when you point at it (desktop layout only).</div>
+                </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input is="emby-checkbox" type="checkbox" id="Hero" />
+                        <span>Home billboard</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">A few featured titles at the top of the home page, with the page taking their colours. Replaces the Media Bar plugin's slideshow.</div>
+                </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input is="emby-checkbox" type="checkbox" id="TopTen" />
+                        <span>Top 10</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">A shelf on the home page with the titles you watched most (episodes count for their series).</div>
+                </div>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input is="emby-checkbox" type="checkbox" id="Tonight" />
+                        <span>"What shall we watch tonight?"</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">Two questions, then a deck of unwatched films to accept or put away. Opens from the side menu on computers, and from the web client's own menu on phones and TVs.</div>
+                </div>
+
+                <h2 style="margin-top: 1.6em;">Where things go</h2>
+
+                <div class="selectContainer">
+                    <label class="selectLabel" for="TopTenPosition">Top 10 on the home page</label>
+                    <select is="emby-select" id="TopTenPosition" class="emby-select-withcolor emby-select">
+                        <option value="top">Right under the billboard</option>
+                        <option value="afterContinue">After "Continue watching"</option>
+                        <option value="end">At the bottom of the page</option>
+                    </select>
+                </div>
+
+                <div class="selectContainer">
+                    <label class="selectLabel" for="QualityCorner">Quality marks on posters</label>
+                    <select is="emby-select" id="QualityCorner" class="emby-select-withcolor emby-select">
+                        <option value="bottomLeft">Bottom left corner</option>
+                        <option value="bottomRight">Bottom right corner</option>
+                        <option value="topLeft">Top left corner</option>
+                    </select>
+                </div>
+
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script type="text/javascript">
+        (function () {
+            var pluginId = 'd5e09db5-245d-4b8d-a8b5-1e5d48841ba6';
+            var fields = ['QualityMarks', 'SideMenu', 'Hero', 'TopTen', 'Tonight'];
+            var choices = ['TopTenPosition', 'QualityCorner'];
+
+            document.querySelector('#AfterglowConfigPage').addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    fields.forEach(function (name) { document.querySelector('#' + name).checked = config[name] !== false; });
+                    choices.forEach(function (name) { if (config[name]) document.querySelector('#' + name).value = config[name]; });
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+
+            document.querySelector('#AfterglowConfigForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    fields.forEach(function (name) { config[name] = document.querySelector('#' + name).checked; });
+                    choices.forEach(function (name) { config[name] = document.querySelector('#' + name).value; });
+                    ApiClient.updatePluginConfiguration(pluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                });
+                return false;
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,52 @@
+name: Release
+
+# Push a tag like v12.3.0.0 (the Jellyfin version it is built for, plus a plugin revision): the plugin is tested, packed, attached to a GitHub release,
+# and manifest.json (the address people add to Jellyfin) gets the new version.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test
+        run: |
+          dotnet test tests/Jellyfin.Plugin.Afterglow.Tests
+          node --test tests/*.test.mjs
+
+      - name: Pack
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node scripts/release.mjs "$VERSION" "Release $VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/afterglow_${{ env.VERSION }}.zip
+          generate_release_notes: true
+
+      - name: Update the catalogue (manifest.json)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "chore: manifest per ${VERSION}" || echo "nothing to commit"
+          git push origin HEAD:main
