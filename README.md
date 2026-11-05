@@ -35,6 +35,7 @@ Settings: Dashboard → Plugins → Afterglow.
 
 - Built for **Jellyfin 12.4.x**: the version number says so (12.4.0.0 is the first release for Jellyfin 12.4.0; a fix for the same server version becomes 12.4.0.1). If Jellyfin ever lists the plugin as not supported after an upgrade, a new release for that version is what fixes it.
 - **Tested on Jellyfin 12.4.0**, on a clean server with the File Transformation plugin: the plugin loads, adds its script and stylesheet to the page, and the billboard, the side menu and "Tonight" work. Jellyfin 12.3 users can keep using version 12.3.0.0.
+- **Jellyfin 12.2 and older are not supported**: Jellyfin will not load the plugin there, and the theme was never tried on those versions. Update the server to 12.3 or newer first.
 - Works with the dark theme or with any other theme (the marks bring their own tiny style).
 
 ## If nothing shows up
