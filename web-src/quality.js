@@ -25,6 +25,7 @@ ag.startQualityMarks = function () {
   var BATCH = 40;
   var cache = new Map(); // item id -> labels
   var asked = new Set();
+  var gate = ag.makeRetryGate(30000); // after a failure the server gets a rest, instead of being asked again at every change of the page
 
   function apply(card, labels) {
     if (!labels.length || card.querySelector('.ag-tags')) return;
@@ -47,7 +48,7 @@ ag.startQualityMarks = function () {
           document.querySelectorAll('[data-id="' + item.Id + '"].card, [data-id="' + item.Id + '"].listItem').forEach(function (card) { apply(card, labels); });
         });
       })
-      .catch(function () { ids.forEach(function (id) { asked.delete(id); }); });
+      .catch(function () { ids.forEach(function (id) { asked.delete(id); gate.failed(id); }); });
   }
 
   function scan() {
@@ -57,7 +58,7 @@ ag.startQualityMarks = function () {
       if (type !== 'Movie' && type !== 'Episode') return;
       var id = card.dataset.id;
       if (cache.has(id)) apply(card, cache.get(id));
-      else if (!asked.has(id)) { asked.add(id); wanted.push(id); }
+      else if (!asked.has(id) && gate.canAsk(id)) { asked.add(id); wanted.push(id); }
     });
     for (var i = 0; i < wanted.length; i += BATCH) fetchLabels(wanted.slice(i, i + BATCH));
   }

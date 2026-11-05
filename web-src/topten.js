@@ -91,19 +91,17 @@ function buildRow(titles) {
 }
 
 ag.startTopTen = function () {
-  var cached;
   var loading = false;
 
-  function load() {
-    if (cached) return Promise.resolve(cached);
+  // One answer for each person signed in: the ranking is made from the watch history of whoever is signed in.
+  var load = ag.perUser(function () {
     return ag.items({
       IncludeItemTypes: 'Movie,Episode', Recursive: true, Filters: 'IsPlayed', SortBy: 'DatePlayed', SortOrder: 'Descending',
       Limit: PLAYS_LOOKED_AT, EnableImageTypes: 'Primary', ImageTypeLimit: 1, EnableUserData: false,
     }).then(function (result) {
-      cached = ag.topTitles(result.Items || [], TOP_LIMIT);
-      return cached;
+      return ag.topTitles(result.Items || [], TOP_LIMIT);
     });
-  }
+  });
 
   function sync() {
     var params = ag.pageParams();

@@ -72,7 +72,7 @@ function parseHash(hash) {
   (parts[1] || '').split('&').forEach(function (pair) {
     if (!pair) return;
     var kv = pair.split('=');
-    params[kv[0]] = decodeURIComponent(kv[1] || '');
+    params[ag.decode(kv[0])] = ag.decode(kv[1] || '');
   });
   return { path: parts[0] || 'home', params: params };
 }
@@ -166,7 +166,7 @@ ag.startSideMenu = function () {
       return r.Items && r.Items[0] ? r : ag.items(base);
     }).then(function (r) {
       if (r.Items && r.Items[0]) location.hash = '#/details?id=' + r.Items[0].Id;
-    });
+    }).catch(function () {});
   }
 
   function build() {
@@ -224,10 +224,23 @@ ag.startSideMenu = function () {
 
   var refresh = ag.debounce(function () { build(); hideOriginalMenu(); markActive(); }, 150);
   new MutationObserver(refresh).observe(document.body, { childList: true, subtree: true });
-  ag.onPageChange(function () { syncVisibility(); markActive(); });
+  // The libraries are those of the person signed in: when someone else signs in on the same page, they are asked for again.
+  var viewsFor = null;
+  function loadViews() {
+    var user = window.ApiClient.getCurrentUserId();
+    if (!user || user === viewsFor) return;
+    viewsFor = user;
+    window.ApiClient.getJSON(window.ApiClient.getUrl('Users/' + user + '/Views'))
+      .then(function (result) {
+        if (window.ApiClient.getCurrentUserId() !== user) return;
+        views = result.Items || [];
+        signature = '';
+        build();
+        hideOriginalMenu();
+      })
+      .catch(function () { build(); hideOriginalMenu(); });
+  }
 
-  ag.items; // (the web client's API is ready: this runs after it signed in)
-  window.ApiClient.getJSON(window.ApiClient.getUrl('Users/' + window.ApiClient.getCurrentUserId() + '/Views'))
-    .then(function (result) { views = result.Items || []; signature = ''; build(); hideOriginalMenu(); })
-    .catch(function () { build(); hideOriginalMenu(); });
+  ag.onPageChange(function () { syncVisibility(); markActive(); loadViews(); });
+  loadViews();
 };

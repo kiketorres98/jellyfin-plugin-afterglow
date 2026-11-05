@@ -52,6 +52,11 @@
       return (location.hash || '').replace(/^#\/?/, '').split('?')[0];
     };
     
+    /** decodeURIComponent that gives the text back as it is when it is not a valid escape (a lone "%" in an address). */
+    ag.decode = function (text) {
+      try { return decodeURIComponent(text); } catch (e) { return text; }
+    };
+    
     /** The query part of the address as an object. */
     ag.pageParams = function () {
       var query = (location.hash.split('?')[1] || '');
@@ -59,9 +64,37 @@
       query.split('&').forEach(function (pair) {
         if (!pair) return;
         var parts = pair.split('=');
-        out[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
+        out[ag.decode(parts[0])] = ag.decode(parts[1] || '');
       });
       return out;
+    };
+    
+    /**
+     * Remembers what `load()` answered, once for each person signed in: someone else signing in on the same page (no reload)
+     * gets their own answer, never the previous person's. A failed answer is not kept.
+     */
+    ag.perUser = function (load) {
+      var answers = {};
+      return function () {
+        var user = window.ApiClient.getCurrentUserId();
+        if (!answers[user]) {
+          answers[user] = Promise.resolve(load()).catch(function (error) {
+            delete answers[user];
+            throw error;
+          });
+        }
+        return answers[user];
+      };
+    };
+    
+    /** Lets an id be asked for again only `waitMs` after it failed, so a server that is down is not asked on every page change. */
+    ag.makeRetryGate = function (waitMs, clock) {
+      var now = clock || Date.now;
+      var until = {};
+      return {
+        canAsk: function (id) { return !(until[id] > now()); },
+        failed: function (id) { until[id] = now() + waitMs; },
+      };
     };
     
     /** Calls `callback` now and whenever the page changes (address change, or the web client drawing a new page). */
@@ -143,6 +176,7 @@
       var BATCH = 40;
       var cache = new Map(); // item id -> labels
       var asked = new Set();
+      var gate = ag.makeRetryGate(30000); // after a failure the server gets a rest, instead of being asked again at every change of the page
     
       function apply(card, labels) {
         if (!labels.length || card.querySelector('.ag-tags')) return;
@@ -165,7 +199,7 @@
               document.querySelectorAll('[data-id="' + item.Id + '"].card, [data-id="' + item.Id + '"].listItem').forEach(function (card) { apply(card, labels); });
             });
           })
-          .catch(function () { ids.forEach(function (id) { asked.delete(id); }); });
+          .catch(function () { ids.forEach(function (id) { asked.delete(id); gate.failed(id); }); });
       }
     
       function scan() {
@@ -175,7 +209,7 @@
           if (type !== 'Movie' && type !== 'Episode') return;
           var id = card.dataset.id;
           if (cache.has(id)) apply(card, cache.get(id));
-          else if (!asked.has(id)) { asked.add(id); wanted.push(id); }
+          else if (!asked.has(id) && gate.canAsk(id)) { asked.add(id); wanted.push(id); }
         });
         for (var i = 0; i < wanted.length; i += BATCH) fetchLabels(wanted.slice(i, i + BATCH));
       }
@@ -263,7 +297,7 @@
       (parts[1] || '').split('&').forEach(function (pair) {    
         if (!pair) return;    
         var kv = pair.split('=');    
-        params[kv[0]] = decodeURIComponent(kv[1] || '');    
+        params[ag.decode(kv[0])] = ag.decode(kv[1] || '');    
       });    
       return { path: parts[0] || 'home', params: params };    
     }    
@@ -357,7 +391,7 @@
           return r.Items && r.Items[0] ? r : ag.items(base);    
         }).then(function (r) {    
           if (r.Items && r.Items[0]) location.hash = '#/details?id=' + r.Items[0].Id;    
-        });    
+        }).catch(function () {});    
       }    
         
       function build() {    
@@ -415,12 +449,25 @@
         
       var refresh = ag.debounce(function () { build(); hideOriginalMenu(); markActive(); }, 150);    
       new MutationObserver(refresh).observe(document.body, { childList: true, subtree: true });    
-      ag.onPageChange(function () { syncVisibility(); markActive(); });    
+      // The libraries are those of the person signed in: when someone else signs in on the same page, they are asked for again.    
+      var viewsFor = null;    
+      function loadViews() {    
+        var user = window.ApiClient.getCurrentUserId();    
+        if (!user || user === viewsFor) return;    
+        viewsFor = user;    
+        window.ApiClient.getJSON(window.ApiClient.getUrl('Users/' + user + '/Views'))    
+          .then(function (result) {    
+            if (window.ApiClient.getCurrentUserId() !== user) return;    
+            views = result.Items || [];    
+            signature = '';    
+            build();    
+            hideOriginalMenu();    
+          })    
+          .catch(function () { build(); hideOriginalMenu(); });    
+      }    
         
-      ag.items; // (the web client's API is ready: this runs after it signed in)    
-      window.ApiClient.getJSON(window.ApiClient.getUrl('Users/' + window.ApiClient.getCurrentUserId() + '/Views'))    
-        .then(function (result) { views = result.Items || []; signature = ''; build(); hideOriginalMenu(); })    
-        .catch(function () { build(); hideOriginalMenu(); });    
+      ag.onPageChange(function () { syncVisibility(); markActive(); loadViews(); });    
+      loadViews();    
     };    
     
   })(ag);
@@ -714,19 +761,17 @@
     }    
         
     ag.startHero = function () {    
-      var cached = null;    
       var loading = false;    
         
-      function load() {    
-        if (cached) return Promise.resolve(cached);    
+      // One answer for each person signed in, so a second person on the same page never sees the first one's billboard.    
+      var load = ag.perUser(function () {    
         return ag.items({    
           IncludeItemTypes: 'Movie,Series', Recursive: true, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: POOL_SIZE,    
           ImageTypes: 'Backdrop', Fields: 'Overview,Genres,CommunityRating,RunTimeTicks,ProductionYear', EnableUserData: true,    
         }).then(function (result) {    
-          cached = ag.pickFeaturedSet(result.Items || [], ag.dayNumber(), HERO_COUNT);    
-          return cached;    
+          return ag.pickFeaturedSet(result.Items || [], ag.dayNumber(), HERO_COUNT);    
         });    
-      }    
+      });    
         
       function sync() {    
         var home = document.getElementById('homeTab');    
@@ -846,19 +891,17 @@
     }    
         
     ag.startTopTen = function () {    
-      var cached;    
       var loading = false;    
         
-      function load() {    
-        if (cached) return Promise.resolve(cached);    
+      // One answer for each person signed in: the ranking is made from the watch history of whoever is signed in.    
+      var load = ag.perUser(function () {    
         return ag.items({    
           IncludeItemTypes: 'Movie,Episode', Recursive: true, Filters: 'IsPlayed', SortBy: 'DatePlayed', SortOrder: 'Descending',    
           Limit: PLAYS_LOOKED_AT, EnableImageTypes: 'Primary', ImageTypeLimit: 1, EnableUserData: false,    
         }).then(function (result) {    
-          cached = ag.topTitles(result.Items || [], TOP_LIMIT);    
-          return cached;    
+          return ag.topTitles(result.Items || [], TOP_LIMIT);    
         });    
-      }    
+      });    
         
       function sync() {    
         var params = ag.pageParams();    
@@ -1054,16 +1097,25 @@
         choices(w.lengthTitle, w.lengthHint, ['short', 'long', 'any'], w.lengths, function (length) { state.length = length; deal(); });    
       }    
         
+      // The answer of a search that was asked in a window that has been closed (or closed and opened again) is not shown.    
+      function stillHere(session) { return !!overlay && state === session; }    
+        
       function deal() {    
+        var session = state;    
         draw([closeButton(), ag.el('p', { class: 'ag-muted', role: 'status', text: words().loading })]);    
         ag.items({    
           IncludeItemTypes: 'Movie', Recursive: true, Filters: 'IsUnplayed', SortBy: 'Random', Limit: POOL_SIZE,    
           Fields: 'Genres,Overview,RunTimeTicks,ProductionYear', EnableImageTypes: 'Primary,Backdrop', ImageTypeLimit: 1,    
         }).then(function (result) {    
+          if (!stillHere(session)) return;    
           state.deck = ag.tonightDeck(result.Items || [], state.mood, state.length, DECK_SIZE);    
           state.index = 0;    
           showCard();    
-        }).catch(function () { state.deck = []; showCard(); });    
+        }).catch(function () {    
+          if (!stillHere(session)) return;    
+          state.deck = [];    
+          showCard();    
+        });    
       }    
         
       function endScreen(empty) {    
@@ -1185,10 +1237,12 @@
         
     var DEFAULTS = { qualityMarks: true, sideMenu: true, hero: true, topTen: true, tonight: true };    
         
-    function whenClientIsReady(callback, triesLeft) {    
+    // Looks every half second at first, then every few seconds for as long as the page is open: somebody may leave the    
+    // sign-in page alone for a while and sign in later, and the features must start then.    
+    function whenClientIsReady(callback, fastTriesLeft) {    
       var client = window.ApiClient;    
       if (client && client.getCurrentUserId && client.getCurrentUserId()) callback();    
-      else if (triesLeft > 0) window.setTimeout(function () { whenClientIsReady(callback, triesLeft - 1); }, 500);    
+      else window.setTimeout(function () { whenClientIsReady(callback, fastTriesLeft - 1); }, fastTriesLeft > 0 ? 500 : 5000);    
     }    
         
     function loadConfig() {    

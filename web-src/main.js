@@ -2,10 +2,12 @@
 
 var DEFAULTS = { qualityMarks: true, sideMenu: true, hero: true, topTen: true, tonight: true };
 
-function whenClientIsReady(callback, triesLeft) {
+// Looks every half second at first, then every few seconds for as long as the page is open: somebody may leave the
+// sign-in page alone for a while and sign in later, and the features must start then.
+function whenClientIsReady(callback, fastTriesLeft) {
   var client = window.ApiClient;
   if (client && client.getCurrentUserId && client.getCurrentUserId()) callback();
-  else if (triesLeft > 0) window.setTimeout(function () { whenClientIsReady(callback, triesLeft - 1); }, 500);
+  else window.setTimeout(function () { whenClientIsReady(callback, fastTriesLeft - 1); }, fastTriesLeft > 0 ? 500 : 5000);
 }
 
 function loadConfig() {

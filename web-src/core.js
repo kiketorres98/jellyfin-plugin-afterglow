@@ -40,6 +40,11 @@ ag.pageName = function () {
   return (location.hash || '').replace(/^#\/?/, '').split('?')[0];
 };
 
+/** decodeURIComponent that gives the text back as it is when it is not a valid escape (a lone "%" in an address). */
+ag.decode = function (text) {
+  try { return decodeURIComponent(text); } catch (e) { return text; }
+};
+
 /** The query part of the address as an object. */
 ag.pageParams = function () {
   var query = (location.hash.split('?')[1] || '');
@@ -47,9 +52,37 @@ ag.pageParams = function () {
   query.split('&').forEach(function (pair) {
     if (!pair) return;
     var parts = pair.split('=');
-    out[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
+    out[ag.decode(parts[0])] = ag.decode(parts[1] || '');
   });
   return out;
+};
+
+/**
+ * Remembers what `load()` answered, once for each person signed in: someone else signing in on the same page (no reload)
+ * gets their own answer, never the previous person's. A failed answer is not kept.
+ */
+ag.perUser = function (load) {
+  var answers = {};
+  return function () {
+    var user = window.ApiClient.getCurrentUserId();
+    if (!answers[user]) {
+      answers[user] = Promise.resolve(load()).catch(function (error) {
+        delete answers[user];
+        throw error;
+      });
+    }
+    return answers[user];
+  };
+};
+
+/** Lets an id be asked for again only `waitMs` after it failed, so a server that is down is not asked on every page change. */
+ag.makeRetryGate = function (waitMs, clock) {
+  var now = clock || Date.now;
+  var until = {};
+  return {
+    canAsk: function (id) { return !(until[id] > now()); },
+    failed: function (id) { until[id] = now() + waitMs; },
+  };
 };
 
 /** Calls `callback` now and whenever the page changes (address change, or the web client drawing a new page). */

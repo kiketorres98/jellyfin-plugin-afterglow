@@ -41,15 +41,23 @@ public sealed class StartupRegistrar : IHostedService
 
     private async Task RegisterWhenReadyAsync(CancellationToken cancellationToken)
     {
-        for (int attempt = 1; attempt <= Attempts && !cancellationToken.IsCancellationRequested; attempt++)
+        try
         {
-            if (TryRegister())
+            for (int attempt = 1; attempt <= Attempts && !cancellationToken.IsCancellationRequested; attempt++)
             {
-                _logger.LogInformation("Afterglow: script registered with File Transformation");
-                return;
-            }
+                if (TryRegister())
+                {
+                    _logger.LogInformation("Afterglow: script registered with File Transformation");
+                    return;
+                }
 
-            await Task.Delay(Pause, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(Pause, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Jellyfin is shutting down: nothing to report.
+            return;
         }
 
         _logger.LogWarning("Afterglow: the File Transformation plugin was not found, so the script is not added. Install it from the plugin catalogue and restart.");

@@ -172,16 +172,25 @@ ag.startTonight = function () {
     choices(w.lengthTitle, w.lengthHint, ['short', 'long', 'any'], w.lengths, function (length) { state.length = length; deal(); });
   }
 
+  // The answer of a search that was asked in a window that has been closed (or closed and opened again) is not shown.
+  function stillHere(session) { return !!overlay && state === session; }
+
   function deal() {
+    var session = state;
     draw([closeButton(), ag.el('p', { class: 'ag-muted', role: 'status', text: words().loading })]);
     ag.items({
       IncludeItemTypes: 'Movie', Recursive: true, Filters: 'IsUnplayed', SortBy: 'Random', Limit: POOL_SIZE,
       Fields: 'Genres,Overview,RunTimeTicks,ProductionYear', EnableImageTypes: 'Primary,Backdrop', ImageTypeLimit: 1,
     }).then(function (result) {
+      if (!stillHere(session)) return;
       state.deck = ag.tonightDeck(result.Items || [], state.mood, state.length, DECK_SIZE);
       state.index = 0;
       showCard();
-    }).catch(function () { state.deck = []; showCard(); });
+    }).catch(function () {
+      if (!stillHere(session)) return;
+      state.deck = [];
+      showCard();
+    });
   }
 
   function endScreen(empty) {

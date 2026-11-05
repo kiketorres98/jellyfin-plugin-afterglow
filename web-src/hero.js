@@ -171,19 +171,17 @@ function mountHero(items) {
 }
 
 ag.startHero = function () {
-  var cached = null;
   var loading = false;
 
-  function load() {
-    if (cached) return Promise.resolve(cached);
+  // One answer for each person signed in, so a second person on the same page never sees the first one's billboard.
+  var load = ag.perUser(function () {
     return ag.items({
       IncludeItemTypes: 'Movie,Series', Recursive: true, SortBy: 'DateCreated', SortOrder: 'Descending', Limit: POOL_SIZE,
       ImageTypes: 'Backdrop', Fields: 'Overview,Genres,CommunityRating,RunTimeTicks,ProductionYear', EnableUserData: true,
     }).then(function (result) {
-      cached = ag.pickFeaturedSet(result.Items || [], ag.dayNumber(), HERO_COUNT);
-      return cached;
+      return ag.pickFeaturedSet(result.Items || [], ag.dayNumber(), HERO_COUNT);
     });
-  }
+  });
 
   function sync() {
     var home = document.getElementById('homeTab');
