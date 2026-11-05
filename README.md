@@ -33,7 +33,8 @@ Settings: Dashboard → Plugins → Afterglow.
 
 ## Compatibility
 
-- Built for **Jellyfin 12.3.x**: the version number says so (12.3.0.0 is the first release for Jellyfin 12.3.0; a fix for the same server version becomes 12.3.0.1). A plugin is tied to the server version it was built for: after a Jellyfin upgrade it may show as "not supported" until a new release comes out.
+- Built for **Jellyfin 12.3.x**: the version number says so (12.3.0.0 is the first release for Jellyfin 12.3.0; a fix for the same server version becomes 12.3.0.1). If Jellyfin ever lists the plugin as not supported after an upgrade, a new release for that version is what fixes it.
+- **Jellyfin 12.4:** not tested yet. Its release notes list only a .NET update and a client SDK update, with no plugin API or web interface changes, so it should work as is. This will be confirmed here once it has been tried.
 - Works with the dark theme or with any other theme (the marks bring their own tiny style).
 
 ## If nothing shows up
