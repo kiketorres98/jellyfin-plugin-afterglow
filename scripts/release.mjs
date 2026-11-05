@@ -11,7 +11,7 @@ export const PLUGIN = {
   owner: 'kiketorres98',
   repo: 'kiketorres98/jellyfin-plugin-afterglow',
   category: 'General',
-  targetAbi: '12.3.0.0',
+  targetAbi: '12.4.0.0',
   description: 'The extras of the Afterglow theme: quality marks, a side menu, a home billboard, top 10 and a tonight picker.',
   overview: 'Adds small features to the Jellyfin web client that CSS alone cannot do. Needs the File Transformation plugin.',
   imageUrl: 'https://raw.githubusercontent.com/kiketorres98/jellyfin-plugin-afterglow/main/logo.png',

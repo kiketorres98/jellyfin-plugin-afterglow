@@ -34,7 +34,9 @@ jobs:
       - name: Pack
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          node scripts/release.mjs "$VERSION" "Release $VERSION"
+          # The text of the annotated tag (git tag -a -m "...") is the catalogue's changelog; a plain tag gets a generic line.
+          NOTES="$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")"
+          node scripts/release.mjs "$VERSION" "${NOTES:-Release $VERSION}"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Publish the release

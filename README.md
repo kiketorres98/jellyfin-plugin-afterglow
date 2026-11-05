@@ -33,8 +33,8 @@ Settings: Dashboard → Plugins → Afterglow.
 
 ## Compatibility
 
-- Built for **Jellyfin 12.3.x**: the version number says so (12.3.0.0 is the first release for Jellyfin 12.3.0; a fix for the same server version becomes 12.3.0.1). If Jellyfin ever lists the plugin as not supported after an upgrade, a new release for that version is what fixes it.
-- **Jellyfin 12.4:** not tested yet. Its release notes list only a .NET update and a client SDK update, with no plugin API or web interface changes, so it should work as is. This will be confirmed here once it has been tried.
+- Built for **Jellyfin 12.4.x**: the version number says so (12.4.0.0 is the first release for Jellyfin 12.4.0; a fix for the same server version becomes 12.4.0.1). If Jellyfin ever lists the plugin as not supported after an upgrade, a new release for that version is what fixes it.
+- **Tested on Jellyfin 12.4.0**, on a clean server with the File Transformation plugin: the plugin loads, adds its script and stylesheet to the page, and the billboard, the side menu and "Tonight" work. Jellyfin 12.3 users can keep using version 12.3.0.0.
 - Works with the dark theme or with any other theme (the marks bring their own tiny style).
 
 ## If nothing shows up
@@ -47,10 +47,10 @@ Settings: Dashboard → Plugins → Afterglow.
 ```
 dotnet test tests/Jellyfin.Plugin.Afterglow.Tests      # C# tests
 node --test tests/*.test.mjs                           # script and manifest tests
-node scripts/release.mjs 12.3.0.1 "What changed"        # build, pack and update manifest.json (the CI does this on a tag)
+node scripts/release.mjs 12.4.0.1 "What changed"        # build, pack and update manifest.json (the CI does this on a tag)
 ```
 
-To publish a version: `git tag v12.3.0.1 && git push --tags`. The workflow tests, packs, creates the GitHub release and updates `manifest.json`.
+To publish a version: `git tag v12.4.0.1 && git push --tags`. The workflow tests, packs, creates the GitHub release and updates `manifest.json`.
 
 ## License
 
