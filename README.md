@@ -18,7 +18,7 @@ Theme and plugin are separate on purpose: use the theme alone, or add the plugin
 | **Tonight** | "What shall we watch?": pick a mood and a length, then swipe through unwatched films. |
 | **Empty favorites** | A friendly message instead of a blank page. |
 
-Each feature can be switched off in the plugin's settings, where you can also choose where the top 10 goes (under the billboard, after "Continue watching", or at the bottom) and which corner of the posters the quality marks use. On phones and TVs the web client's own menu gets a "Tonight" entry, and entries another plugin added twice are shown once. Playback always uses Jellyfin's own player.
+Each feature can be switched off in the plugin's settings, where you can also choose where the top 10 goes (under the billboard, after "Continue watching", or at the bottom), which corner of the posters the quality marks use, and which kinds of libraries the sections menu lists beyond the default four (books, live TV, or music videos). On phones and TVs the web client's own menu gets a "Tonight" entry, and entries another plugin added twice are shown once. Playback always uses Jellyfin's own player.
 
 ## Install
 

@@ -54,6 +54,12 @@
 
                 <h2 style="margin-top: 1.6em;">Where things go</h2>
 
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="ExtraRailViews">Extra kinds in the sections menu</label>
+                    <input is="emby-input" type="text" id="ExtraRailViews" class="emby-input" />
+                    <div class="fieldDescription">Extra kinds of libraries to list after the default ones: "books", "livetv", "musicvideos". Leave empty for the default menu.</div>
+                </div>
+
                 <div class="selectContainer">
                     <label class="selectLabel" for="TopTenPosition">Top 10 on the home page</label>
                     <select is="emby-select" id="TopTenPosition" class="emby-select-withcolor emby-select">
@@ -83,12 +89,14 @@
             var pluginId = 'd5e09db5-245d-4b8d-a8b5-1e5d48841ba6';
             var fields = ['QualityMarks', 'SideMenu', 'Hero', 'TopTen', 'Tonight'];
             var choices = ['TopTenPosition', 'QualityCorner'];
+            var texts = ['ExtraRailViews'];
 
             document.querySelector('#AfterglowConfigPage').addEventListener('pageshow', function () {
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                     fields.forEach(function (name) { document.querySelector('#' + name).checked = config[name] !== false; });
                     choices.forEach(function (name) { if (config[name]) document.querySelector('#' + name).value = config[name]; });
+                    texts.forEach(function (name) { document.querySelector('#' + name).value = config[name] || ''; });
                     Dashboard.hideLoadingMsg();
                 });
             });
@@ -99,6 +107,7 @@
                 ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                     fields.forEach(function (name) { config[name] = document.querySelector('#' + name).checked; });
                     choices.forEach(function (name) { config[name] = document.querySelector('#' + name).value; });
+                    texts.forEach(function (name) { config[name] = document.querySelector('#' + name).value; });
                     ApiClient.updatePluginConfiguration(pluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
                 return false;

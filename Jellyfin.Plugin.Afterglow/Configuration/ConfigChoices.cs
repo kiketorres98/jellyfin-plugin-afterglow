@@ -5,6 +5,7 @@ public static class ConfigChoices
 {
     private static readonly string[] TopTenPositions = ["top", "afterContinue", "end"];
     private static readonly string[] QualityCorners = ["bottomLeft", "bottomRight", "topLeft"];
+    private static readonly string[] RailViewKinds = ["books", "livetv", "musicvideos"];
 
     /// <summary>Where the top 10 shelf goes on the home page.</summary>
     /// <param name="value">What was saved.</param>
@@ -18,4 +19,16 @@ public static class ConfigChoices
 
     private static string Pick(string? value, string[] allowed) =>
         allowed.FirstOrDefault(option => string.Equals(option, value, StringComparison.Ordinal)) ?? allowed[0];
+
+    /// <summary>The extra kinds of libraries the sections menu lists, from a comma-separated list; unknown or mistyped names are dropped.</summary>
+    /// <param name="value">What was saved.</param>
+    /// <returns>The known kinds from the list, lowercased, without repeats, in the order saved.</returns>
+    public static string[] ExtraRailViews(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? []
+            : value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(kind => kind.ToLowerInvariant())
+                .Where(kind => RailViewKinds.Contains(kind))
+                .Distinct()
+                .ToArray();
 }

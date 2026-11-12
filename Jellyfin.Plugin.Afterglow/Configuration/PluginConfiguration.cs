@@ -25,4 +25,7 @@ public class PluginConfiguration : BasePluginConfiguration
 
     /// <summary>Gets or sets the corner of the posters for the quality marks: "bottomLeft", "bottomRight" or "topLeft".</summary>
     public string QualityCorner { get; set; } = "bottomLeft";
+
+    /// <summary>Gets or sets extra kinds of libraries the sections menu lists beyond the defaults, comma-separated: "books", "livetv", "musicvideos".</summary>
+    public string ExtraRailViews { get; set; } = string.Empty;
 }

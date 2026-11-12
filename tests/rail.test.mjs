@@ -13,6 +13,8 @@ describe('viewHref', () => {
     assert.equal(ag.viewHref(view('b2', 'Serie', 'tvshows')), '#/tv?topParentId=b2&collectionType=tvshows');
     assert.equal(ag.viewHref(view('c3', 'Collezioni', 'boxsets')), '#/boxsets?topParentId=c3&collectionType=boxsets');
     assert.equal(ag.viewHref(view('d4', 'Musica', 'music')), '#/music?topParentId=d4&collectionType=music');
+    assert.equal(ag.viewHref(view('y', 'Libri', 'books')), '#/books?topParentId=y&collectionType=books');
+    assert.equal(ag.viewHref(view('l', 'Diretta', 'livetv')), '#/livetv?topParentId=l&collectionType=livetv');
   });
 
   test('a library of a kind it does not know still opens, as a plain list', () => {
@@ -41,6 +43,24 @@ describe('railItems', () => {
     const extras = [{ label: 'Discover', href: '#/home?seerrfinTab=discover', icon: 'compass' }];
     const labels = ag.railItems(views, { language: 'it', extras }).map((i) => i.label);
     assert.deepEqual(labels.slice(-2), ['Collezioni', 'Discover']);
+  });
+
+  test('kinds the settings add (books, live TV) are listed with their own page and icon', () => {
+    const all = [...views, view('y', 'Libri', 'books'), view('x', 'TV', 'livetv')];
+    ag.config = { extraRailViews: ['books', 'livetv'] };
+    const items = ag.railItems(all, { language: 'it', extras: [] });
+    ag.config = undefined;
+    const labels = items.map((i) => i.label);
+    assert.deepEqual(labels, ['Home', 'Preferiti', 'Film', 'Serie TV', 'Collezioni', 'Libri', 'TV']);
+    assert.deepEqual(items.map((i) => i.icon), ['home', 'heart', 'film', 'tv', 'collection', 'book', 'tv']);
+  });
+
+  test('kinds the settings do not add stay out', () => {
+    const all = [...views, view('y', 'Libri', 'books')];
+    ag.config = { extraRailViews: ['livetv'] };
+    const labels = ag.railItems(all, { language: 'it', extras: [] }).map((i) => i.label);
+    ag.config = undefined;
+    assert.ok(!labels.includes('Libri'));
   });
 
   test('libraries of kinds that have no page of their own here (live TV, books…) are left out', () => {
