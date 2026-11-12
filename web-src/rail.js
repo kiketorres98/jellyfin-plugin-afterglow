@@ -23,6 +23,7 @@ var ICONS = {
   tv: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z',
   collection: 'M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z',
   music: 'M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z',
+  book: 'M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l2.5-1.5L16 12V4H6z',
   list: 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
   compass: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19zM12 10.9a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2z',
   download: 'M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z',
@@ -36,14 +37,23 @@ var ICONS = {
 /** The address of a library's page in the web client. */
 ag.viewHref = function (view) {
   var id = view.Id;
-  var kinds = { movies: 'movies', tvshows: 'tv', boxsets: 'boxsets', music: 'music' };
-  var page = kinds[view.CollectionType];
+  var page = VIEW_KINDS[view.CollectionType];
   return page ? '#/' + page + '?topParentId=' + id + '&collectionType=' + view.CollectionType : '#/list?parentId=' + id;
 };
 
-var VIEW_ICONS = { movies: 'film', tvshows: 'tv', boxsets: 'collection', music: 'music' };
-// Kinds of library that open a normal page here; the others (live TV, books…) stay in the web client's own menus.
+// How each library kind opens, and which icon it wears: the kinds the web client has a page for open there,
+// anything else falls back to a plain list.
+var VIEW_KINDS = { movies: 'movies', tvshows: 'tv', boxsets: 'boxsets', music: 'music', books: 'books', livetv: 'livetv', musicvideos: 'musicvideos' };
+var VIEW_ICONS = { movies: 'film', tvshows: 'tv', boxsets: 'collection', music: 'music', books: 'book', livetv: 'tv', musicvideos: 'film' };
+// Shown without asking; the settings can add more kinds that have a page here (books, live TV, music videos).
 var SHOWN_VIEWS = { movies: true, tvshows: true, boxsets: true, music: true };
+
+function shownViews() {
+  var shown = Object.assign({}, SHOWN_VIEWS);
+  var extra = (ag.config && ag.config.extraRailViews) || [];
+  extra.forEach(function (kind) { shown[kind] = true; });
+  return shown;
+}
 
 /**
  * The entries of the rail: home, favourites, the libraries, then what other plugins added (Discover, Requests…).
@@ -56,7 +66,7 @@ ag.railItems = function (views, options) {
     { label: text(language, 'favorites'), href: '#/home?tab=1', icon: 'heart' },
   ];
   (views || []).forEach(function (view) {
-    if (!SHOWN_VIEWS[view.CollectionType]) return;
+    if (!shownViews()[view.CollectionType]) return;
     items.push({ label: view.Name, href: ag.viewHref(view), icon: VIEW_ICONS[view.CollectionType] || 'list' });
   });
   return items.concat(options.extras || []);

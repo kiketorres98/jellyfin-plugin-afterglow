@@ -42,6 +42,7 @@ public class AfterglowController : ControllerBase
             tonight = config?.Tonight ?? true,
             topTenPosition = ConfigChoices.TopTenPosition(config?.TopTenPosition),
             qualityCorner = ConfigChoices.QualityCorner(config?.QualityCorner),
+            extraRailViews = ConfigChoices.ExtraRailViews(config?.ExtraRailViews),
         });
     }
 

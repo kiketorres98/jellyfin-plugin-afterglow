@@ -19,6 +19,7 @@ function loadConfig() {
       Object.keys(DEFAULTS).forEach(function (key) { out[key] = config[key] === undefined ? DEFAULTS[key] : config[key] !== false; });
       out.topTenPosition = typeof config.topTenPosition === 'string' ? config.topTenPosition : 'top';
       out.qualityCorner = typeof config.qualityCorner === 'string' ? config.qualityCorner : 'bottomLeft';
+      out.extraRailViews = Array.isArray(config.extraRailViews) ? config.extraRailViews : [];
       return out;
     });
 }
